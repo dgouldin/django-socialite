@@ -133,7 +133,7 @@ class Client(object):
         if not response.status == 200:
             raise Error(content)
 
-        response_args = Client2._split_url_string(content)
+        response_args = Client._split_url_string(content)
         return response_args
 
     def request(self, base_uri, access_token=None, method='GET', body=None,
