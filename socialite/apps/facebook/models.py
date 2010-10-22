@@ -1,5 +1,5 @@
 from django.db import models
-from socialie.apps.base.oauth20.models import Oauth20Service
+from socialite.apps.base.oauth20.models import Oauth20Service
 
 class FacebookServiceManager(models.Manager):
     def update_or_create(self, **kwargs):

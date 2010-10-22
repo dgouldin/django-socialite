@@ -1,3 +1,6 @@
+import base64
+import hashlib # TODO: remove dependency on Python >= 2.5
+import hmac
 import urllib
 import urlparse
 
@@ -14,6 +17,29 @@ import models
 api_url = 'https://graph.facebook.com/'
 oauth_url = 'https://graph.facebook.com/oauth/'
 oauth_client = oauth_helper.Client(settings.FACEBOOK_APPLICATION_ID, settings.FACEBOOK_SECRET, oauth_url)
+
+def signed(view):
+    '''Based on http://developers.facebook.com/docs/authentication/canvas'''
+    def _view(request, *args, **kwargs):
+        signed_request = request.GET.get('signed_request', '').encode('utf-8')
+        try:
+            encoded_sig, payload = signed_request.split('.', 2)
+        except ValueError:
+            raise AttributeError("Invalid signed_request.")
+
+        def add_padding(s):
+            return '%s%s' % (s, '=' * (4 - len(s) % 4))
+
+        sig = base64.urlsafe_b64decode(add_padding(encoded_sig))
+        data = simplejson.loads(base64.urlsafe_b64decode(add_padding(payload)))
+
+        if data['algorithm'].upper() != 'HMAC-SHA256':
+            raise ValueError('Unknown algorithm. Expected HMAC-SHA256')
+        expected_sig = hmac.new(settings.FACEBOOK_SECRET, payload, hashlib.sha256).digest()
+        if sig != expected_sig:
+            raise ValueError('Bad Signed JSON signature!')
+        return view(request, data, *args, **kwargs)
+    return _view
 
 def users_info(access_token, ids):
     CACHE_KEY = 'facebook:users_info:%s:%s' % (access_token, ','.join([str(i) for i in ids]))

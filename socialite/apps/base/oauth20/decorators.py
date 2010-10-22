@@ -18,6 +18,12 @@ class OAuth20Mediator(object):
         self.redirect_field_name = redirect_field_name
         self.view_functions = {}
 
+    def login(self, request, access_token):
+        user = django_authenticate(client=self.client, access_token=access_token)
+        if user:
+            django_login(request, user)
+        return user
+    
     def callback(self, request):
         action = request.session.get(ACTION_FORMAT % self.client.oauth_base_url)
         view_function = self.view_functions.get(action)
@@ -27,16 +33,14 @@ class OAuth20Mediator(object):
         access_token = request.GET.get('access_token')
         code = request.GET.get('code')
         if code and access_token is None:
-            access_token_args = self.client.access_token(code, request.build_absolute_uri())
+            access_token_args = self.client.access_token(code, request.build_absolute_uri(reverse(self.callback)))
             access_token = access_token_args.get('access_token')
         if not access_token:
             t = loader.get_template(access_token_template)
             return HttpResponse(t.render(RequestContext(request, {})))
 
         if not request.user.is_authenticated():
-            user = django_authenticate(client=self.client, access_token=access_token)
-            if user:
-                django_login(request, user)
+            user = self.login(request, access_token)
         redirect_to = request.session.get('redirect_to') or settings.LOGIN_REDIRECT_URL
         return view_function(request, access_token, redirect_to)
 
