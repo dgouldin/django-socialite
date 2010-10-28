@@ -1,6 +1,10 @@
 import httplib2
 import urllib
-from urlparse import parse_qs, parse_qsl, urljoin
+try:
+    from urlparse import parse_qs, parse_qsl, urljoin
+except ImportError:
+    from urlparse import urljoin
+    from cgi import parse_qs, parse_qsl
 
 REQUEST_TOKEN, AUTHORIZE, AUTHENTICATE, ACCESS_TOKEN = 0, 1, 2, 3
 
