@@ -1,6 +1,10 @@
 import oauth2 as oauth
 import urlparse
 
+if not hasattr(urlparse,'parse_qsl'):
+    import cgi
+    urlparse.parse_qsl = cgi.parse_qsl
+
 from utils import get_mutable_query_dict
 
 REQUEST_TOKEN, AUTHORIZE, AUTHENTICATE, ACCESS_TOKEN = range(4)
