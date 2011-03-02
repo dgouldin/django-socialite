@@ -57,12 +57,25 @@ def get_friend_ids(access_token):
         cache.set(CACHE_KEY, info, 60 * 5) # 5 minutes
     return info
 
+def get_follower_ids(access_token):
+    CACHE_KEY = 'twitter:get_friend_ids:%s' % access_token
+    info = cache.get(CACHE_KEY)
+    if info is None:
+        url = urlparse.urljoin(api_url, 'followers/ids.json')
+        info = simplejson.loads(oauth_client.request(url, access_token))
+        cache.set(CACHE_KEY, info, 60 * 5) # 5 minutes
+    return info
+
 def find_friends(access_token):
     twitter_ids = get_friend_ids(access_token)
     friends = []
     if twitter_ids:
         friends = models.TwitterService.objects.filter(unique_id__in=twitter_ids)
     return friends
+
+def friend_tweets(access_token):
+    url = urlparse.urljoin(api_url, 'statuses/friends_timeline.json?count=200')
+    return simplejson.loads(oauth_client.request(url, access_token))
 
 def announce(access_token, message):
     url = urlparse.urljoin(api_url, 'statuses/update.json')

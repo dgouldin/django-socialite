@@ -16,7 +16,7 @@ OAUTH_ACTIONS = {
 }
 
 class Client:
-    
+
     def __init__(self, key, secret, base_url, actions=OAUTH_ACTIONS, force_auth_header=False,
         signature_method=None):
 
@@ -65,7 +65,7 @@ class Client:
         client = oauth.Client(consumer, request_token)
 
         access_token_url = self.get_url(ACCESS_TOKEN)
-        
+
         if verifier:
             body = "oauth_verifier=%s" % verifier
         else:
@@ -75,11 +75,11 @@ class Client:
             raise Exception("Invalid response %s." % resp['status'])
         return dict(urlparse.parse_qsl(content))
 
-    def request(self, url, access_token, method="GET", body=None):
+    def request(self, url, access_token, method="GET", body=''):
         consumer = oauth.Consumer(self.key, self.secret)
         token = oauth.Token(key=access_token['oauth_token'], secret=access_token['oauth_token_secret'])
         client = oauth.Client(consumer, token=token)
         resp, content = client.request(url, method=method, body=body)
         if resp['status'] != '200':
-            raise Exception("Invalid response %s." % resp['status'])
+            raise Exception("Invalid response %s.\r\n%s" % (resp['status'], content))
         return content
