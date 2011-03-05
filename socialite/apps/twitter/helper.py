@@ -64,3 +64,11 @@ def announce(access_token, message):
     url = urlparse.urljoin(api_url, 'statuses/update.json')
     q = get_mutable_query_dict({'status': message})
     return simplejson.loads(oauth_client.request(url, access_token, method="POST", body=q.urlencode()))
+
+def dm(access_token, user_id, message):
+    url = urlparse.urljoin(api_url, 'direct_messages/new.json')
+    q = get_mutable_query_dict({
+        'user_id': user_id,
+        'text': message,
+    })
+    return simplejson.loads(oauth_client.request(url, access_token, method="POST", body=q.urlencode()))
