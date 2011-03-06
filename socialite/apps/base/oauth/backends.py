@@ -16,6 +16,8 @@ class BaseOauthBackend:
         user = self.get_existing_user(access_token)
         if user:
             return user
+        import logging
+        logging.error("FIXME: need to put service prefix on user names to make it clearer which service a user was created for.")
         user = self.register_user(access_token)
         return user
 
