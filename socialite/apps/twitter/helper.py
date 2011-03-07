@@ -60,6 +60,17 @@ def friend_tweets(access_token):
     url = urlparse.urljoin(api_url, 'statuses/friends_timeline.json?count=200')
     return simplejson.loads(oauth_client.request(url, access_token))
 
+AVATAR_SIZES = set(["mini", "normal", "bigger", "reasonably_small"])
+def pick_avatar_size(avatar_url, size):
+    if not size in AVATAR_SIZES:
+        raise ValueError("size must be one of %s" % AVATAR_SIZES)
+    avatar_pieces = avatar_url.split('_')
+    for possible_size in AVATAR_SIZES:
+        if possible_size == size:
+            continue
+        avatar_pieces[-1] = avatar_pieces[-1].replace(possible_size, size)
+    return "_".join(avatar_pieces)
+
 def announce(access_token, message):
     url = urlparse.urljoin(api_url, 'statuses/update.json')
     q = get_mutable_query_dict({'status': message})
