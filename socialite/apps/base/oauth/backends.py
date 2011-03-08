@@ -8,6 +8,10 @@ class BaseOauthBackend:
         raise NotImplemented
 
     def register_user(self, access_token):
+        """
+        # FIXME: Would be good to document that if you want a UserProfile created for OAuth-created users,
+           you'll want to hook the post_save signal for User.
+        """
         raise NotImplemented
 
     def authenticate(self, client=None, access_token=None):
