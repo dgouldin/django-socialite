@@ -19,6 +19,9 @@ class TwitterBackend(BaseOauthBackend):
             return None
         return service.user
 
+    def post_register_user(self, user, user_info):
+        pass # hook for subclasses
+
     def register_user(self, access_token):
         try:
             user_info = helper.user_info(access_token)
@@ -36,4 +39,5 @@ class TwitterBackend(BaseOauthBackend):
                     last_name=last_name,
                     password=hashlib.md5(str(random.random())).hexdigest())
         user.save()
+        self.post_register_user(user, user_info)
         return user
