@@ -83,3 +83,11 @@ def dm(access_token, user_id, message):
         'text': message,
     })
     return simplejson.loads(oauth_client.request(url, access_token, method="POST", body=q.urlencode()))
+
+def get_relationship(access_token, target_user_id):
+    url = urlparse.urljoin(api_url, 'friendships/show.json')
+    q = get_mutable_query_dict({
+        'target_id': target_user_id,
+    })
+    url = '%s?%s' % (url, q.urlencode())
+    return simplejson.loads(oauth_client.request(url, access_token, method="GET"))
