@@ -18,3 +18,6 @@ class OauthService(models.Model):
             'oauth_token': self.token,
             'oauth_token_secret': self.secret,
         }
+
+    def __unicode__(self):
+        return "%s for id(%s)" % (self.token, self.user_id)
