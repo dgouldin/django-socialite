@@ -11,22 +11,12 @@ class TwitterBackend(BaseOauthBackend):
     def validate_service_type(self, base_url):
         return base_url == helper.oauth_client.base_url
 
-    def get_existing_user(self, access_token):
-        unique_id = helper.get_unique_id(access_token)
-        try:
-            service = models.TwitterService.objects.get(unique_id=unique_id)
-        except models.TwitterService.DoesNotExist:
-            return None
-        return service.user
-
-    def post_register_user(self, user, user_info):
-        pass # hook for subclasses
-
-    def register_user(self, access_token):
-        try:
-            user_info = helper.user_info(access_token)
-        except: # TODO: bare except, bad!
-            return None
+    def populate_user(self, user_info, user=None):
+        username = get_unique_username(user_info['screen_name'])
+        if not user:
+            user = User(username=username, password=hashlib.md5(str(random.random())).hexdigest())
+        else:
+            user.username = username
 
         name_parts = user_info['name'].split(' ')
         if len(name_parts) > 1:
@@ -34,10 +24,35 @@ class TwitterBackend(BaseOauthBackend):
             last_name = ' '.join(name_parts[1:])
         else:
             first_name, last_name = user_info['name'], ''
-        user = User(username=get_unique_username(user_info['screen_name']),
-                    first_name=first_name,
-                    last_name=last_name,
-                    password=hashlib.md5(str(random.random())).hexdigest())
+        user.first_name = first_name
+        user.last_name = last_name
+        return user
+
+    def get_existing_user(self, access_token, impersonate=None):
+        unique_id = helper.get_unique_id(access_token)
+        try:
+            service = models.TwitterService.objects.get(unique_id=unique_id)
+        except models.TwitterService.DoesNotExist:
+            return None
+
+        # update the user record with the newly impersonated user's info
+        if service.impersonated_unique_id and service.impersonated_unique_id != impersonate:
+            user_info = helper.user_info(access_token, user_id=impersonate)
+            user = self.populate_user(user_info, user=service.user)
+            user.save()
+            self.post_update_user(user, user_info)
+        return service.user
+
+    def post_update_user(self, user, user_info):
+        pass # hook for subclasses
+
+    def register_user(self, access_token, impersonate=None):
+        try:
+            user_info = helper.user_info(access_token, user_id=impersonate)
+        except Exception,e: # TODO: bare except, bad!
+            return None
+
+        user = self.populate_user(user_info)
         user.save()
-        self.post_register_user(user, user_info)
+        self.post_update_user(user, user_info)
         return user

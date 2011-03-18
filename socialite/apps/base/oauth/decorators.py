@@ -27,6 +27,7 @@ class OAuthMediator(object):
         return HttpResponseRedirect(redirect_url)
 
     def callback(self, request):
+        impersonate = request.session.get(settings.TWITTER_IMPERSONATE_SESSION_KEY)
         request_token = request.session.get(REQUEST_TOKEN_FORMAT % self.client.base_url)
         action = request.session.get(ACTION_FORMAT % self.client.base_url)
         view_function = self.view_functions.get(action)
@@ -35,11 +36,11 @@ class OAuthMediator(object):
         oauth_verifier = request.GET.get('oauth_verifier')
         access_token = self.client.access_token(request_token, verifier=oauth_verifier)
         if not request.user.is_authenticated():
-            user = django_authenticate(client=self.client, access_token=access_token)
+            user = django_authenticate(client=self.client, access_token=access_token, impersonate=impersonate)
             if user:
                 django_login(request, user)
         redirect_to = request.session.get('redirect_to') or settings.LOGIN_REDIRECT_URL
-        return view_function(request, access_token, redirect_to)
+        return view_function(request, access_token, redirect_to=redirect_to, impersonate=impersonate)
 
     def authorize(self, view_function):
         self.view_functions[helper.AUTHORIZE] = view_function
@@ -51,6 +52,9 @@ class OAuthMediator(object):
     def authenticate(self, view_function):
         self.view_functions[helper.AUTHENTICATE] = view_function
         def _authenticate(request):
+            impersonate = request.REQUEST.get(settings.TWITTER_IMPERSONATE_SESSION_KEY)
+            if impersonate:
+                request.session[settings.TWITTER_IMPERSONATE_SESSION_KEY] = impersonate
             redirect_to = request.REQUEST.get(self.redirect_field_name, '')
             # Light security check -- make sure redirect_to isn't garbage.
             if not redirect_to or '//' in redirect_to or ' ' in redirect_to:

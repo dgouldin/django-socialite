@@ -18,8 +18,15 @@ oauth_actions = {
 }
 oauth_client = oauth_helper.Client(settings.TWITTER_KEY, settings.TWITTER_SECRET, oauth_url, oauth_actions)
 
-def user_info(access_token):
-    url = urlparse.urljoin(api_url, 'account/verify_credentials.json')
+def user_info(access_token, user_id=None):
+    if user_id is None:
+        url = urlparse.urljoin(api_url, 'account/verify_credentials.json')
+    else:
+        url = urlparse.urljoin(api_url, 'users/show.json')
+        q = get_mutable_query_dict({
+            'user_id': user_id,
+        })
+        url = '%s?%s' % (url, q.urlencode())
     info = simplejson.loads(oauth_client.request(url, access_token))
     return info
 
@@ -32,25 +39,35 @@ def users_info(access_token, user_ids):
     info = simplejson.loads(oauth_client.request(url, access_token))
     return info
 
-def get_unique_id(access_token):
+def get_unique_id(access_token, user_id=None):
     try:
         return access_token['user_id']
     except KeyError:
         pass
-    return user_info(access_token)['id']
+    return user_info(access_token, user_id=user_id)['id']
 
-def get_friend_ids(access_token):
+def get_friend_ids(access_token, user_id=None):
     url = urlparse.urljoin(api_url, 'friends/ids.json')
+    if user_id is not None:
+        q = get_mutable_query_dict({
+            'user_id': user_id,
+        })
+        url = '%s?%s' % (url, q.urlencode())
     info = simplejson.loads(oauth_client.request(url, access_token))
     return info
 
-def get_follower_ids(access_token):
+def get_follower_ids(access_token, user_id=None):
     url = urlparse.urljoin(api_url, 'followers/ids.json')
+    if user_id is not None:
+        q = get_mutable_query_dict({
+            'user_id': user_id,
+        })
+        url = '%s?%s' % (url, q.urlencode())
     info = simplejson.loads(oauth_client.request(url, access_token))
     return info
 
-def find_friends(access_token):
-    twitter_ids = get_friend_ids(access_token)
+def find_friends(access_token, user_id=None):
+    twitter_ids = get_friend_ids(access_token, user_id=None)
     friends = []
     if twitter_ids:
         friends = models.TwitterService.objects.filter(unique_id__in=twitter_ids)
@@ -84,10 +101,13 @@ def dm(access_token, user_id, message):
     })
     return simplejson.loads(oauth_client.request(url, access_token, method="POST", body=q.urlencode()))
 
-def get_relationship(access_token, target_user_id):
+def get_relationship(access_token, target_user_id, user_id=None):
     url = urlparse.urljoin(api_url, 'friendships/show.json')
-    q = get_mutable_query_dict({
+    params = {
         'target_id': target_user_id,
-    })
+    }
+    if user_id is not None:
+        params['source_id'] = user_id
+    q = get_mutable_query_dict(params)
     url = '%s?%s' % (url, q.urlencode())
     return simplejson.loads(oauth_client.request(url, access_token, method="GET"))

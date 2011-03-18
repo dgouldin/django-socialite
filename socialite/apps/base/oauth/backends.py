@@ -14,15 +14,15 @@ class BaseOauthBackend:
         """
         raise NotImplemented
 
-    def authenticate(self, client=None, access_token=None):
+    def authenticate(self, client=None, access_token=None, impersonate=None):
         if client is None or access_token is None or not self.validate_service_type(getattr(client, 'base_url', None)):
             return None
-        user = self.get_existing_user(access_token)
+        user = self.get_existing_user(access_token, impersonate=impersonate)
         if user:
             return user
         import logging
         logging.error("FIXME: need to put service prefix on user names to make it clearer which service a user was created for.")
-        user = self.register_user(access_token)
+        user = self.register_user(access_token, impersonate=impersonate)
         return user
 
     def get_user(self, id):

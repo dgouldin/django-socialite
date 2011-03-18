@@ -6,6 +6,7 @@ class OauthService(models.Model):
     token = models.CharField(max_length=255)
     secret = models.CharField(max_length=255)
     unique_id = models.CharField(max_length=255, unique=True)
+    impersonated_unique_id = models.CharField(max_length=255, blank=True)
     user = models.ForeignKey(User, related_name="%(class)ss")
 
     class Meta:
@@ -18,6 +19,10 @@ class OauthService(models.Model):
             'oauth_token': self.token,
             'oauth_token_secret': self.secret,
         }
+
+    @property
+    def impersonated(self):
+        return bool(self.impersonated_unique_id)
 
     def __unicode__(self):
         return "%s for id(%s)" % (self.token, self.user_id)
