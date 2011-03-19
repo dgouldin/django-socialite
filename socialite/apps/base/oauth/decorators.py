@@ -27,7 +27,7 @@ class OAuthMediator(object):
         return HttpResponseRedirect(redirect_url)
 
     def callback(self, request):
-        impersonate = request.session.get(settings.TWITTER_IMPERSONATE_SESSION_KEY)
+        impersonate = request.session.pop(settings.TWITTER_IMPERSONATE_SESSION_KEY, None)
         request_token = request.session.get(REQUEST_TOKEN_FORMAT % self.client.base_url)
         action = request.session.get(ACTION_FORMAT % self.client.base_url)
         view_function = self.view_functions.get(action)

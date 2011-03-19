@@ -36,11 +36,14 @@ class TwitterBackend(BaseOauthBackend):
             return None
 
         # update the user record with the newly impersonated user's info
-        if service.impersonated_unique_id and service.impersonated_unique_id != impersonate:
+        if service.impersonated_unique_id != impersonate:
             user_info = helper.user_info(access_token, user_id=impersonate)
             user = self.populate_user(user_info, user=service.user)
             user.save()
             self.post_update_user(user, user_info)
+        if impersonate is None and service.impersonated:
+            service.impersonated_unique_id = ''
+            service.save()
         return service.user
 
     def post_update_user(self, user, user_info):
