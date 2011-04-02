@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 from django.utils import simplejson
 
 from socialite.apps.base.oauth import helper as oauth_helper
-from socialite.apps.base.oauth.utils import get_mutable_query_dict
 from socialite.apps.twitter import models
 
 api_url = 'http://api.twitter.com/1/'
@@ -23,11 +22,9 @@ def user_info(access_token, user_id=None):
     if user_id is None:
         url = urlparse.urljoin(api_url, 'account/verify_credentials.json')
     else:
-        url = urlparse.urljoin(api_url, 'users/show.json')
-        q = get_mutable_query_dict({
+        url = '%s?%s' % (urlparse.urljoin(api_url, 'users/show.json'), urllib.urlencode({
             'user_id': user_id,
-        })
-        url = '%s?%s' % (url, q.urlencode())
+        }))
     info = simplejson.loads(oauth_client.request(url, access_token))
     return info
 
@@ -35,11 +32,9 @@ def users_info(access_token, user_ids):
     cursor = 0
     MAX_SIZE = 100
     while cursor < len(user_ids):
-        url = urlparse.urljoin(api_url, 'users/lookup.json')
-        q = get_mutable_query_dict({
+        url = '%s?%s' % (urlparse.urljoin(api_url, 'users/lookup.json'), urllib.urlencode({
             'user_id': ','.join([str(i) for i in user_ids[cursor:cursor + MAX_SIZE]]),
-        })
-        url = '%s?%s' % (url, q.urlencode())
+        }))
         users = simplejson.loads(oauth_client.request(url, access_token))
         for user in users:
             yield user
@@ -103,36 +98,51 @@ def friend_tweets(access_token):
     return simplejson.loads(oauth_client.request(url, access_token))
 
 AVATAR_SIZES = set(["mini", "normal", "bigger", "reasonably_small"])
-def pick_avatar_size(avatar_url, size):
+def get_avatar(size, access_token=None, user_id=None, avoid_302=False, default_avatar=None):
     if not size in AVATAR_SIZES:
         raise ValueError("size must be one of %s" % AVATAR_SIZES)
-    avatar_pieces = avatar_url.split('_')
-    for possible_size in AVATAR_SIZES:
-        if possible_size == size:
-            continue
-        avatar_pieces[-1] = avatar_pieces[-1].replace(possible_size, size)
-    return "_".join(avatar_pieces)
+
+    if avoid_302 or default_avatar is not None:
+        if default_avatar is None:
+            if access_token is None:
+                raise ValueError("an access token must be provided to resolve the user's real avatar url")
+            info = user_info(access_token, user_id=user_id)
+            default_avatar = info['profile_image_url']
+        return '_'.join((default_avatar.rsplit('_', 1)[0], size))
+    else:
+        access_token = access_token or {}
+        user_id = user_id or access_token.get('user_id')
+        if user_id is None:
+            if not access_token:
+                raise ValueError("either user_id or access_token must be given to identify the user")
+            info = user_info(access_token, user_id=user_id)
+            user_id = info.get('user_id')
+        if user_id is None:
+            raise ValueError("unable to identify the user from values given")
+        return '%s?%s' % (urlparse.urljoin(api_url, 'users/profile_image/twitter.json'),
+            urllib.urlencode({
+                'user_id': user_id,
+                'size': size,
+            }))
 
 def announce(access_token, message):
     url = urlparse.urljoin(api_url, 'statuses/update.json')
-    q = get_mutable_query_dict({'status': message})
-    return simplejson.loads(oauth_client.request(url, access_token, method="POST", body=q.urlencode()))
+    return simplejson.loads(oauth_client.request(url, access_token, method="POST", body=urllib.urlencode({
+        'status': message,
+    })))
 
 def dm(access_token, user_id, message):
     url = urlparse.urljoin(api_url, 'direct_messages/new.json')
-    q = get_mutable_query_dict({
+    return simplejson.loads(oauth_client.request(url, access_token, method="POST", body=urllib.urlencode({
         'user_id': user_id,
         'text': message,
-    })
-    return simplejson.loads(oauth_client.request(url, access_token, method="POST", body=q.urlencode()))
+    })))
 
 def get_relationship(access_token, target_user_id, user_id=None):
-    url = urlparse.urljoin(api_url, 'friendships/show.json')
     params = {
         'target_id': target_user_id,
     }
     if user_id is not None:
         params['source_id'] = user_id
-    q = get_mutable_query_dict(params)
-    url = '%s?%s' % (url, q.urlencode())
+    url = '%s?%s' % (urlparse.urljoin(api_url, 'friendships/show.json'), urllib.urlencode(params))
     return simplejson.loads(oauth_client.request(url, access_token, method="GET"))

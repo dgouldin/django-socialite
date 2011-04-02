@@ -1,11 +1,10 @@
 import oauth2 as oauth
+import urllib
 import urlparse
 
 if not hasattr(urlparse,'parse_qsl'):
     import cgi
     urlparse.parse_qsl = cgi.parse_qsl
-
-from utils import get_mutable_query_dict
 
 REQUEST_TOKEN, AUTHORIZE, AUTHENTICATE, ACCESS_TOKEN = range(4)
 OAUTH_ACTIONS = {
@@ -45,10 +44,9 @@ class Client:
                 oauth_request.sign_request(self.signature_method, consumer, consumer)
                 url = oauth_request.to_url()
             else:
-                q = get_mutable_query_dict({
+                url = '%s?%s' % (url, urllib.urlencode({
                     'oauth_token': token.key,
-                })
-                url = '%s?%s' % (url, q.urlencode())
+                }))
         return url
 
     def request_token(self):
