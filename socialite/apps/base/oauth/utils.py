@@ -19,14 +19,15 @@ def get_full_url(request):
         protocol = 'https'
     return urlparse.urljoin('%s://%s' % (protocol, domain), request.META['PATH_INFO'])
 
-def get_unique_username(username):
+def get_unique_username(username, user_id=None):
     suffix = 0
     found = True
     new_username = username
     while found:
-        try:
-            User.objects.get(username=new_username)
-        except User.DoesNotExist:
+        qs = User.objects.filter(username=new_username)
+        if user_id is not None:
+            qs = qs.exclude(pk=user_id)
+        if not qs.exists():
             found = False
         else:
             suffix += 1

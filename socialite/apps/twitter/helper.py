@@ -32,13 +32,18 @@ def user_info(access_token, user_id=None):
     return info
 
 def users_info(access_token, user_ids):
-    url = urlparse.urljoin(api_url, 'users/lookup.json')
-    q = get_mutable_query_dict({
-        'user_id': ','.join([str(i) for i in user_ids]),
-    })
-    url = '%s?%s' % (url, q.urlencode())
-    info = simplejson.loads(oauth_client.request(url, access_token))
-    return info
+    cursor = 0
+    MAX_SIZE = 100
+    while cursor < len(user_ids):
+        url = urlparse.urljoin(api_url, 'users/lookup.json')
+        q = get_mutable_query_dict({
+            'user_id': ','.join([str(i) for i in user_ids[cursor:cursor + MAX_SIZE]]),
+        })
+        url = '%s?%s' % (url, q.urlencode())
+        users = simplejson.loads(oauth_client.request(url, access_token))
+        for user in users:
+            yield user
+        cursor += MAX_SIZE
 
 def get_unique_id(access_token, user_id=None):
     try:
