@@ -108,7 +108,10 @@ def get_avatar(size, access_token=None, user_id=None, avoid_302=False, default_a
                 raise ValueError("an access token must be provided to resolve the user's real avatar url")
             info = user_info(access_token, user_id=user_id)
             default_avatar = info['profile_image_url']
-        return '_'.join((default_avatar.rsplit('_', 1)[0], size))
+        path, kind = default_avatar.rsplit(".", 1)
+        root, original_size = path.rsplit('_', 1) # hack, depends on default avatar not having 2 "_" in its size name.
+        assert original_size == 'normal', "Twitter changed its default avatar size which breaks get_avatar."
+        return "%s_%s.%s" % (root, size, kind)
     else:
         access_token = access_token or {}
         user_id = user_id or access_token.get('user_id')
