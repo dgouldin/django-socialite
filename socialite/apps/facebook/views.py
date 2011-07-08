@@ -9,10 +9,8 @@ from socialite.apps.base.oauth20 import decorators as oauth_decorators
 from socialite.apps.facebook import helper
 from socialite.apps.facebook.models import FacebookService
 
-SCOPES = [
-    'publish_stream',
-    'offline_access',
-]
+SCOPES = ['publish_stream', 'offline_access'] + getattr(settings, 'FACEBOOK_SCOPES', [])
+
 EXTRA_PARAMS = {'scope': ','.join(SCOPES)}
 
 mediator = oauth_decorators.OAuth20Mediator(helper.oauth_client, params=EXTRA_PARAMS)

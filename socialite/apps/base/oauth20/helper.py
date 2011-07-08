@@ -26,7 +26,7 @@ class Client(object):
             raise ValueError("Client_id and client_secret must be set.")
 
         self.http = httplib2.Http(cache=cache, timeout=timeout,
-            proxy_info=proxy_info)
+            proxy_info=proxy_info,disable_ssl_certificate_validation=True)
 
     @staticmethod
     def _split_url_string(param_str):
