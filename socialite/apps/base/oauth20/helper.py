@@ -1,6 +1,7 @@
 import httplib2
 import urllib
 import sys
+from utils import Error
 try:
     from urlparse import parse_qs, parse_qsl, urljoin
 except ImportError:
