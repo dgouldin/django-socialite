@@ -29,10 +29,17 @@ class Client(object):
 
         http_kwargs = dict(cache=cache, 
                            timeout=timeout,
-                           proxy_info=proxy_info)
-        if sys.version.startswith("2.5"):
-            http_kwargs['disable_ssl_certificate_validation'] = True
-        self.http = httplib2.Http(**http_kwargs)
+                           proxy_info=proxy_info,
+                           disable_ssl_certificate_validation=True)
+        try:
+            self.http = httplib2.Http(**http_kwargs)
+        except TypeError,e:
+            if "keyword argument" in unicode(e):
+                http_kwargs.pop('disable_ssl_certificate_validation')
+                self.http = httplib2.Http(**http_kwargs)
+            else:
+                raise
+            
 
     @staticmethod
     def _split_url_string(param_str):
