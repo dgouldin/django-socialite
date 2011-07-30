@@ -33,12 +33,9 @@ class Client(object):
                            disable_ssl_certificate_validation=True)
         try:
             self.http = httplib2.Http(**http_kwargs)
-        except TypeError,e:
-            if "keyword argument" in unicode(e):
-                http_kwargs.pop('disable_ssl_certificate_validation')
-                self.http = httplib2.Http(**http_kwargs)
-            else:
-                raise
+        except TypeError:
+            http_kwargs.pop('disable_ssl_certificate_validation')
+            self.http = httplib2.Http(**http_kwargs)
             
 
     @staticmethod
