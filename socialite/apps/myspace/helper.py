@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.utils import simplejson
 
 from socialite.apps.base.oauth import helper as oauth_helper
-from socialite.apps.base.oauth.utils import get_mutable_query_dict
+from socialite.apps.base.oauth20.utils import get_mutable_query_dict
 
 from socialite.apps.myspace import models
 

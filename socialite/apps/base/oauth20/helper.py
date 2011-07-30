@@ -1,5 +1,7 @@
 import httplib2
 import urllib
+import sys
+from utils import Error
 try:
     from urlparse import parse_qs, parse_qsl, urljoin
 except ImportError:
@@ -25,8 +27,16 @@ class Client(object):
            self.oauth_base_url is None:
             raise ValueError("Client_id and client_secret must be set.")
 
-        self.http = httplib2.Http(cache=cache, timeout=timeout,
-            proxy_info=proxy_info,disable_ssl_certificate_validation=True)
+        http_kwargs = dict(cache=cache, 
+                           timeout=timeout,
+                           proxy_info=proxy_info,
+                           disable_ssl_certificate_validation=True)
+        try:
+            self.http = httplib2.Http(**http_kwargs)
+        except TypeError:
+            http_kwargs.pop('disable_ssl_certificate_validation')
+            self.http = httplib2.Http(**http_kwargs)
+            
 
     @staticmethod
     def _split_url_string(param_str):

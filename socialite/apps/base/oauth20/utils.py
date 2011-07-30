@@ -33,3 +33,7 @@ def get_unique_username(username):
             suffix += 1
             new_username = '%s%s' % (username, str(suffix))
     return new_username
+
+
+class Error(Exception):
+    pass

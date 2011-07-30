@@ -6,7 +6,7 @@ from django.template import loader, RequestContext
 from socialite.apps.base.oauth import decorators as oauth_decorators
 
 from socialite.apps.myspace import helper
-from socialite.apps.twitter.models import MyspaceService
+from socialite.apps.myspace.models import MyspaceService
 
 mediator = oauth_decorators.OAuthMediator(helper.oauth_client)
 
